@@ -148,7 +148,10 @@ const OrderDetails = () => {
           </div>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 mt-8">
+          <Link to={`/orders/${order.id}/track`} className="bg-white border border-primary-600 text-primary-600 px-6 py-2 rounded-md font-medium hover:bg-primary-50 transition-colors">
+            Track Order
+          </Link>
           <Link to="/products" className="bg-primary-600 text-white px-6 py-2 rounded-md font-medium hover:bg-primary-700 transition-colors">
             Continue Shopping
           </Link>

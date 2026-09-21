@@ -16,6 +16,7 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import MyOrders from './pages/MyOrders';
 import OrderDetails from './pages/OrderDetails';
+import OrderTracking from './pages/OrderTracking';
 
 const Navigation = () => {
   const { user, logout } = useContext(AuthContext);
@@ -141,6 +142,7 @@ const App = () => {
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/orders" element={<MyOrders />} />
               <Route path="/orders/:id" element={<OrderDetails />} />
+              <Route path="/orders/:id/track" element={<OrderTracking />} />
             </Route>
             
             <Route element={<ProtectedRoute requireAdmin={true} />}>

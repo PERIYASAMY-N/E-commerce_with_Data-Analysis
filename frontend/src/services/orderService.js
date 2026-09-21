@@ -5,6 +5,16 @@ const createOrder = async (orderData) => {
   return response.data;
 };
 
+const createRazorpayOrder = async (orderData) => {
+  const response = await api.post('/orders/razorpay', orderData);
+  return response.data;
+};
+
+const verifyPayment = async (verificationData) => {
+  const response = await api.post('/orders/verify-payment', verificationData);
+  return response.data;
+};
+
 const getMyOrders = async () => {
   const response = await api.get('/orders');
   return response.data;
@@ -30,5 +40,7 @@ export default {
   getMyOrders,
   getMyOrderById,
   getAdminOrders,
-  updateOrderStatus
+  updateOrderStatus,
+  createRazorpayOrder,
+  verifyPayment
 };

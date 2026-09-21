@@ -1,15 +1,20 @@
 import React, { useContext, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { CreditCard, Truck, Banknote } from 'lucide-react';
+import { CreditCard, Truck, QrCode } from 'lucide-react';
+import useRazorpay from 'react-razorpay';
 import { CartContext } from '../context/CartContext';
 import orderService from '../services/orderService';
+import { AuthContext } from '../context/AuthContext';
 
 const Checkout = () => {
   const { cart, refreshCart } = useContext(CartContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState('COD');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
+  const [Razorpay] = useRazorpay();
 
   if (cart.items.length === 0) {
     return (
@@ -24,17 +29,72 @@ const Checkout = () => {
     );
   }
 
+  const handleRazorpayPayment = async (orderData) => {
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      amount: orderData.amount,
+      currency: orderData.currency,
+      name: import.meta.env.VITE_UPI_MERCHANT_NAME || 'ShopInsight',
+      description: 'Order Payment',
+      order_id: orderData.razorpayOrderId,
+      handler: async (response) => {
+        try {
+          setLoading(true);
+          const verifyResult = await orderService.verifyPayment({
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_signature: response.razorpay_signature,
+            order_id: orderData.orderId
+          });
+          
+          if (verifyResult.success) {
+            await refreshCart();
+            navigate(`/orders/${orderData.orderId}/track`, { state: { justPlaced: true } });
+          } else {
+            setError('Payment verification failed.');
+            navigate(`/orders/${orderData.orderId}`); // Let them see it as pending/failed
+          }
+        } catch (err) {
+          setError(err.response?.data?.message || 'Payment verification failed.');
+        } finally {
+          setLoading(false);
+        }
+      },
+      prefill: {
+        name: user?.name || '',
+        email: user?.email || '',
+      },
+      theme: {
+        color: '#2563eb', // primary-600
+      },
+    };
+
+    const rzp = new Razorpay(options);
+
+    rzp.on('payment.failed', function (response) {
+      setError(response.error.description || 'Payment failed. Please try again.');
+      setLoading(false);
+    });
+
+    rzp.open();
+  };
+
   const handlePlaceOrder = async () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await orderService.createOrder({ paymentMethod });
-      await refreshCart();
-      navigate(`/orders/${result.data.orderId}`, { state: { justPlaced: true } });
+      if (paymentMethod === 'COD') {
+        const result = await orderService.createOrder({ paymentMethod });
+        await refreshCart();
+        navigate(`/orders/${result.data.orderId}/track`, { state: { justPlaced: true } });
+      } else {
+        // UPI or CARD via Razorpay
+        const result = await orderService.createRazorpayOrder({ paymentMethod });
+        handleRazorpayPayment(result.data);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to place order. Please try again.');
-    } finally {
-      setLoading(false);
+      setLoading(false); // Only set to false on error, keep loading true if Razorpay opens
     }
   };
 
@@ -90,13 +150,13 @@ const Checkout = () => {
                 <label className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${paymentMethod === 'UPI' ? 'border-primary-600 bg-primary-50' : 'border-gray-200 hover:border-gray-300'}`}>
                   <input type="radio" name="payment" value="UPI" checked={paymentMethod === 'UPI'} onChange={() => setPaymentMethod('UPI')} className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300" />
                   <span className="ml-3 flex items-center gap-2 font-medium text-gray-900">
-                    <Banknote size={18} className="text-gray-500" /> UPI
+                    <QrCode size={18} className="text-gray-500" /> Pay with UPI (Razorpay)
                   </span>
                 </label>
                 <label className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${paymentMethod === 'CARD' ? 'border-primary-600 bg-primary-50' : 'border-gray-200 hover:border-gray-300'}`}>
                   <input type="radio" name="payment" value="CARD" checked={paymentMethod === 'CARD'} onChange={() => setPaymentMethod('CARD')} className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300" />
                   <span className="ml-3 flex items-center gap-2 font-medium text-gray-900">
-                    <CreditCard size={18} className="text-gray-500" /> Credit / Debit Card
+                    <CreditCard size={18} className="text-gray-500" /> Credit / Debit Card (Razorpay)
                   </span>
                 </label>
               </div>
@@ -122,12 +182,13 @@ const Checkout = () => {
                   <span className="text-2xl font-bold text-primary-600">₹{total.toLocaleString('en-IN')}</span>
                 </div>
               </div>
+
               <button 
                 onClick={handlePlaceOrder}
                 disabled={loading}
                 className="w-full bg-primary-600 text-white py-4 px-4 rounded-md font-bold text-lg hover:bg-primary-700 disabled:opacity-75 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? 'Placing Order...' : 'Place Order'}
+                {loading ? 'Processing...' : (paymentMethod === 'COD' ? 'Place Order' : 'Pay Now')}
               </button>
             </div>
           </div>

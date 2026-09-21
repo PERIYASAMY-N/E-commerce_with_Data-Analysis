@@ -23,6 +23,13 @@ Database migration structure built natively (`npm run migrate`) preventing accid
 - Backend: Production start PASSED via `node server.js` structure.
 - Database: Pending cloud provision, validated logically.
 - Core Application Features (Auth, Cart, Checkout, Analytics): Functionally PASSED local/unit logic validations.
+- **New Features**: Real UPI QR Payment flow using Razorpay and Order Tracking Timeline validated successfully.
+
+### Recent Feature Additions
+- Added Order Tracking functionality allowing customers to view the order lifecycle (Pending -> Confirmed -> Processing -> Shipped -> Delivered).
+- Implemented real Razorpay Automatic UPI QR Code Payment integration on Checkout.
+- Added Razorpay webhook endpoint (`/api/orders/webhook`) and signature verification.
+- Cleaned up all hardcoded dummy variables across the frontend and backend to rely entirely on the DB.
 
 ### Documentation
 - `README.md`
@@ -30,7 +37,9 @@ Database migration structure built natively (`npm run migrate`) preventing accid
 - `API.md`
 
 ### Known Limitations
-- The application currently relies on `.env` injected credentials for local database connections (which is now fully functional and verified locally). Production deployments will rely on cloud provider environment variables.
+- The application currently relies on `.env` injected credentials for local database connections. Production deployments will rely on cloud provider environment variables.
+- The webhook endpoint requires a publicly accessible URL. During local development, Razorpay webhooks will not reach `localhost` unless a tunneling service (like ngrok) is used.
+- Actual live payments require production Razorpay keys replacing the current test keys.
 
 ### Final Status
 Production Deployment Configured — Final Provider Deployment Pending

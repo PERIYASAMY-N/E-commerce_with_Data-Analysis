@@ -65,8 +65,11 @@ const MyOrders = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Link to={`/orders/${order.id}`} className="text-primary-600 hover:text-primary-900 flex items-center justify-end gap-1">
+                        <Link to={`/orders/${order.id}`} className="text-primary-600 hover:text-primary-900 flex items-center justify-end gap-1 mb-2">
                           <Eye size={16} /> View
+                        </Link>
+                        <Link to={`/orders/${order.id}/track`} className="text-blue-600 hover:text-blue-900 flex items-center justify-end gap-1">
+                          Track
                         </Link>
                       </td>
                     </tr>

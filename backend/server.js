@@ -10,7 +10,11 @@ const PORT = process.env.PORT || 5000;
 app.use(cors({
   origin: process.env.FRONTEND_URL || '*'
 }));
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
 
 const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
